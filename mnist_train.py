@@ -79,7 +79,7 @@ def evaluate(loader):                                                           
     return total_loss / total, correct / total                                  # restituisce loss media e accuracy
 
 
-for epoch in range(1, 5):                                                       # ripete 5 volte: epoch vale 1, 2, 3, 4, 5
+for epoch in range(1, 21):                                                       # ripete 5 volte: epoch vale 1, 2, 3, 4, 5
     model.train()                                                               # mette la rete in modalità addestramento
     for images, labels in train_loader:                                         # per ognuno dei 782 batch di training
         images, labels = images.to(device), labels.to(device)                   # sposta il batch sulla GPU
