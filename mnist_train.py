@@ -79,7 +79,11 @@ def evaluate(loader):                                                           
     return total_loss / total, correct / total                                  # restituisce loss media e accuracy
 
 
-for epoch in range(1, 21):                                                       # ripete 5 volte: epoch vale 1, 2, 3, 4, 5
+best_val_loss = float("inf")                                                    # miglior val loss vista finora: parte da infinito
+patience = 3                                                                    # quante epoch senza miglioramenti prima di fermarsi
+epochs_without_improvement = 0                                                  # contatore delle epoch senza miglioramenti
+
+for epoch in range(1, 21):                                                      # al massimo 20 epoch: epoch vale da 1 a 20
     model.train()                                                               # mette la rete in modalità addestramento
     for images, labels in train_loader:                                         # per ognuno dei 782 batch di training
         images, labels = images.to(device), labels.to(device)                   # sposta il batch sulla GPU
@@ -92,3 +96,22 @@ for epoch in range(1, 21):                                                      
     print("epoch", epoch)                                                       # numero dell'epoch
     print("  train: loss", round(train_loss, 4), "acc", round(train_acc, 4))    # risultati sul training, 4 decimali
     print("  val:   loss", round(val_loss, 4), "acc", round(val_acc, 4))        # risultati sulla validation, 4 decimali
+
+    if val_loss < best_val_loss:                                                # la val loss è la più bassa finora?
+        best_val_loss = val_loss                                                # sì: diventa il nuovo record
+        epochs_without_improvement = 0                                          # azzera il contatore
+        torch.save(model.state_dict(), "best_model.pt")                         # salva i pesi in un file
+        print("  salvato: nuovo miglior modello")                               # avvisa che ha salvato
+    else:                                                                       # no: la rete non è migliorata
+        epochs_without_improvement += 1                                         # aumenta il contatore di 1
+        if epochs_without_improvement == patience:                              # 3 epoch di fila senza miglioramenti?
+            print("stop: nessun miglioramento da", patience, "epoch")           # avvisa che si ferma
+            break                                                               # esce dal ciclo delle epoch
+
+
+test_set = datasets.MNIST("data", train=False, download=True,transform=transforms.ToTensor())                    # le 10.000 immagini di test, mai usate finora convertite in tensor come le altre
+test_loader = DataLoader(test_set, batch_size=256)                              # consegna il test a gruppi di 256
+
+model.load_state_dict(torch.load("best_model.pt"))                              # rimette nella rete i pesi dell'epoch migliore
+test_loss, test_acc = evaluate(test_loader)                                     # misura sul test, una volta sola
+print("test: loss", round(test_loss, 4), "acc", round(test_acc, 4))             # risultato finale
